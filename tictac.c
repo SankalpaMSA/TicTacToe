@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdbool.h>
 
 void menu(){
     printf("Welcome to Tic Tac Toe!\n");
@@ -50,14 +49,14 @@ void printboard(char board[][10], int size){
 }
 
 // Check if a move is valid
-bool isValidMove(char board[][10], int size, int row, int col){
+int isValidMove(char board[][10], int size, int row, int col){
     if(row < 0 || row >= size || col < 0 || col >= size){
-        return false;
+        return 0;
     }
     if(board[row][col] != ' '){
-        return false;
+        return 0;
     }
-    return true;
+    return 1;
 }
 
 // Make a move on the board
@@ -65,65 +64,97 @@ void makeMove(char board[][10], int size, int row, int col, char player){
     board[row][col] = player;
 }
 
-// Check for a win condition
-bool checkWin(char board[][10], int size, char player){
+// Check for a win
+int checkWin(char board[][10], int size, char player){
     // Check rows
     for(int row = 0; row < size; row++){
-        bool win = true;
+        int win = 1;
         for(int col = 0; col < size; col++){
             if(board[row][col] != player){
-                win = false;
+                win = 0;
                 break;
             }
         }
-        if(win) return true;
+        if(win) return 1;
     }
 
     // Check columns
     for(int col = 0; col < size; col++){
-        bool win = true;
+       int  win = 1;
         for(int row = 0; row < size; row++){
             if(board[row][col] != player){
-                win = false;
+                win = 0;
                 break;
             }
         }
-        if(win) return true;
+        if(win) return 1;
     }
 
     // Check main diagonal (top-left to bottom-right)
-    bool win = true;
+    int win = 1;
     for(int i = 0; i < size; i++){
         if(board[i][i] != player){
-            win = false;
+            win = 0;
             break;
         }
     }
-    if(win) return true;
+    if(win) return 1;
 
     // Check secondary diagonal (top-right to bottom-left)
-    win = true;
+    win = 1;
     for(int i = 0; i < size; i++){
         if(board[i][size-1-i] != player){
-            win = false;
+            win = 0;
             break;
         }
     }
-    if(win) return true;
+    if(win) return 1;
 
-    return false;
+    return 0;
 }
 
-// Check if the board is full (draw condition)
-bool isBoardFull(char board[][10], int size){
+// Check for draw condition
+int isBoardFull(char board[][10], int size){
     for(int row = 0; row < size; row++){
         for(int col = 0; col < size; col++){
             if(board[row][col] == ' '){
-                return false;
+                return 0;
             }
         }
     }
-    return true;
+    return 1;
+}
+
+// Log board state to file
+void logBoard(FILE *logFile, char board[][10], int size) {
+        fprintf(logFile, "\nBoard State:\n");
+	
+	// column headers
+	fprintf(logFile, "    ");
+	for (int col = 0; col < size; col++) {
+		fprintf(logFile, "%d   ", col);
+	}
+	fprintf(logFile, "\n");
+
+	for (int row = 0; row < size; row++) {
+		fprintf(logFile, "  ");
+		for (int col = 0; col < size; col++) {
+			fprintf(logFile, "----");
+		}
+		fprintf(logFile, "-\n");
+
+		fprintf(logFile, "%d ", row);
+		for (int col = 0; col < size; col++) {
+			fprintf(logFile, "| %c ", board[row][col]);
+		}
+		fprintf(logFile, "|\n");
+	}
+	
+	fprintf(logFile, "  ");
+	for (int col = 0; col < size; col++) {
+		fprintf(logFile, "----");
+	}
+	fprintf(logFile, "-\n\n");
 }
 
 int main(){
@@ -132,7 +163,7 @@ int main(){
     char board[10][10];
     char currentPlayer = 'X';
     int row, col;
-    bool gameOver = false;
+    int gameOver = 0;
 
     // Get board size
     printf("Enter the size of the board (3-10): ");
@@ -144,6 +175,13 @@ int main(){
     }
 
     initializeBoard(board, size);
+
+    // Open log file
+    FILE *logFile = fopen("TicTacToe_log.txt", "w");
+    if (logFile == NULL) {
+        printf("Error opening log file!\n");
+        return 1;
+    }
 
     // Game loop
     while(!gameOver){
@@ -160,11 +198,13 @@ int main(){
         // Make move
         makeMove(board, size, row, col, currentPlayer);
 
+	logBoard(logFile, board, size);
+
         // Check for win
         if(checkWin(board, size, currentPlayer)){
             printboard(board, size);
             printf("Player %c wins!\n", currentPlayer);
-            gameOver = true;
+            gameOver = 1;
             continue;
         }
 
@@ -172,13 +212,16 @@ int main(){
         if(isBoardFull(board, size)){
             printboard(board, size);
             printf("It's a draw!\n");
-            gameOver = true;
+            gameOver = 1;
             continue;
         }
 
         // Switch player
         currentPlayer = (currentPlayer == 'X') ? 'O' : 'X';
     }
+
+    //Close the log file
+    fclose(logFile);
 
     return 0;
 }
