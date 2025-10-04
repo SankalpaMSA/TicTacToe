@@ -1,11 +1,17 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
 void menu(){
     printf("Welcome to Tic Tac Toe!\n");
     printf("-----------------------\n\n");
+    printf("1. Player Vs Player\n");
+    printf("2. Player Vs Computer\n");
+    printf("3. Three Players\n\n");
+
 }
 
-// Initialize the board with empty spaces
+// Initialize the board with spaces
 void initializeBoard(char board[][10], int size){
     for(int row = 0; row < size; row++){
         for(int col = 0; col < size; col++){
@@ -53,6 +59,11 @@ int isValidMove(char board[][10], int size, int row, int col){
     if(row < 0 || row >= size || col < 0 || col >= size){
         return 0;
     }
+    return 1;
+}
+
+//Check if a cell is occupied
+int isCellFree(char board[][10], int row, int col){
     if(board[row][col] != ' '){
         return 0;
     }
@@ -64,7 +75,7 @@ void makeMove(char board[][10], int size, int row, int col, char player){
     board[row][col] = player;
 }
 
-// Check for a win
+// Check for a win condition
 int checkWin(char board[][10], int size, char player){
     // Check rows
     for(int row = 0; row < size; row++){
@@ -80,7 +91,7 @@ int checkWin(char board[][10], int size, char player){
 
     // Check columns
     for(int col = 0; col < size; col++){
-       int  win = 1;
+        int win = 1;
         for(int row = 0; row < size; row++){
             if(board[row][col] != player){
                 win = 0;
@@ -113,7 +124,7 @@ int checkWin(char board[][10], int size, char player){
     return 0;
 }
 
-// Check for draw condition
+// Check for a draw
 int isBoardFull(char board[][10], int size){
     for(int row = 0; row < size; row++){
         for(int col = 0; col < size; col++){
@@ -157,6 +168,15 @@ void logBoard(FILE *logFile, char board[][10], int size) {
 	fprintf(logFile, "-\n\n");
 }
 
+// Function for computer move
+void computerMove(char board[][10], int size, int *row, int *col) {
+    do {
+        *row = rand() % size;
+        *col = rand() % size;
+    } while (!isValidMove(board, size, *row, *col));
+    printf("Computer Chooses %d %d\n", *row, *col);
+}
+
 int main(){
     menu();
     int size;
@@ -165,14 +185,23 @@ int main(){
     int row, col;
     int gameOver = 0;
 
-    // Get board size
-    printf("Enter the size of the board (3-10): ");
-    scanf("%d", &size);
+    //Get game mode
+    int mode;
+    printf("Enter mode: ");
+    scanf("%d", &mode);
+    printf("\n");
 
-    if(size < 3 || size > 10){
-        printf("Invalid board size! Please enter a number between 3 and 10.\n");
-        return 1;
-    }
+    // Get board size(loop until a valid size is given)
+    do{
+	    printf("Enter the size of the board (3-10): ");
+	    scanf("%d", &size);
+
+	    if(size < 3 || size > 10){
+        	printf("Invalid board size! Please enter a number between 3 and 10.\n\n");
+	    }
+    }while(size < 3 || size > 10);
+
+    srand(time(NULL)); //Initialize the random number generator with current time
 
     initializeBoard(board, size);
 
@@ -186,14 +215,25 @@ int main(){
     // Game loop
     while(!gameOver){
         printboard(board, size);
-        printf("Player %c's turn. Enter row and column (e.g., 0 1): ", currentPlayer);
-        scanf("%d %d", &row, &col);
+        if (mode == 2 && currentPlayer == 'O') {
+	    printf("Computer's turn(Player %c).", currentPlayer);	
+            computerMove(board, size, &row, &col);
+        } else {
+	    printf("Player %c's turn. Enter row and column (e.g., 0 1): ", currentPlayer);
+            scanf("%d %d", &row, &col);
+        }
 
         // Validate move
         if(!isValidMove(board, size, row, col)){
             printf("Invalid move! Try again.\n");
             continue;
         }
+
+	//Check if cell is occupied
+	if(!isCellFree(board, row, col)){
+		printf("Cell is already occupied! Try again.\n");
+		continue;
+	}
 
         // Make move
         makeMove(board, size, row, col, currentPlayer);
@@ -222,6 +262,5 @@ int main(){
 
     //Close the log file
     fclose(logFile);
-
     return 0;
 }
